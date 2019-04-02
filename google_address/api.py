@@ -6,12 +6,12 @@ class GoogleAddressApi:
     url = 'https://maps.googleapis.com/maps/api/geocode/json?address={address}'
     key = None
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         # Set key
         self.key = helpers.get_settings().get("API_KEY", None)
 
         # Set language
-        self.language = helpers.get_settings().get("API_LANGUAGE", "en_US")
+        self.language = kwargs.get('language', helpers.get_settings().get("API_LANGUAGE", "en_US"))
 
     def _get_url(self):
         url = self.url
