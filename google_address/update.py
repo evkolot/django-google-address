@@ -22,7 +22,7 @@ def update_address(instance):
 
     instance.address_components.clear()
     for i, api_component in enumerate(result["address_components"]):
-        i18n_component_data = {lang: data[i] for lang, data in i18n_response.items()}
+        i18n_component_data = {lang: data[i] for lang, data in i18n_response.items() if len(data) - 1 >= i}
         component = AddressComponent.get_or_create_component(api_component, i18n_component_data)
         instance.address_components.add(component)
 
