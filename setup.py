@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 try:  # for pip >= 10
     from pip._internal.req import parse_requirements
-except ImportError: # for pip <= 9.0.3
+except ImportError:  # for pip <= 9.0.3
     from pip.req import parse_requirements
 
 install_reqs = parse_requirements('requirements.txt', session=False)
@@ -11,7 +11,7 @@ reqs = [str(ir.req) for ir in install_reqs]
 
 setup(
     name='django-google-address',
-    version='1.2.0',
+    version='1.2.1',
     author=u'Leonardo Arroyo',
     author_email='contato@leonardoarroyo.com',
     packages=find_packages(),
