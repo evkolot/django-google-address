@@ -2,19 +2,28 @@ import threading
 
 from google_address.api import GoogleAddressApi
 from google_address.models import Address, AddressComponent
+from .helpers import get_settings
 
 
 def update_address(instance):
     response = GoogleAddressApi().query(instance.raw)
+    i18n_response = {}
+    languages = get_settings().get("I18N", None)
 
     if len(response["results"]) > 0:
         result = response["results"][0]
+        if languages:
+            for language in languages:
+                language_response = GoogleAddressApi(language=language).query(instance.raw)
+                if len(response["results"]) > 0:
+                    i18n_response[language] = language_response["results"][0]["address_components"]
     else:
         return False
 
     instance.address_components.clear()
-    for api_component in result["address_components"]:
-        component = AddressComponent.get_or_create_component(api_component)
+    for i, api_component in enumerate(result["address_components"]):
+        i18n_component_data = {lang: data[i] for lang, data in i18n_response.items()}
+        component = AddressComponent.get_or_create_component(api_component, i18n_component_data)
         instance.address_components.add(component)
 
     try:

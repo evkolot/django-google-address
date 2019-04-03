@@ -6,7 +6,7 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
+    atomic = False
     dependencies = [
         ('google_address', '0004_auto_20170418_0133'),
     ]

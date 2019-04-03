@@ -1,6 +1,9 @@
-from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import models
 from django.db.models import Count
+from django.utils import translation
+
+from . import helpers
 
 ADDRESS_PRESENTATION_TYPES = ('long_name', 'short_name',)
 
@@ -12,20 +15,43 @@ class AddressComponentType(models.Model):
         return self.name
 
 
+class AddressComponentSets(models.QuerySet):
+    def unique_cities(self, locale=None):
+        queryset = self.filter(types__name="locality")
+        if locale is not None:
+            return queryset.select_related('i18n')
+        else:
+            return queryset
+
+
+class AddressComponentManager(models.Manager):
+    def get_queryset(self):
+        return AddressComponentSets(self.model, using=self._db)
+
+    def cities(self, locale=None):
+        if helpers.get_settings().get("I18N", None):
+            locale = translation.get_language()
+        return self.get_queryset().unique_cities(locale)
+
+
 class AddressComponent(models.Model):
     long_name = models.CharField(max_length=400)
     short_name = models.CharField(max_length=400)
     types = models.ManyToManyField(AddressComponentType)
 
+    objects = AddressComponentManager()
+
     def __str__(self):
         return self.long_name
 
     @staticmethod
-    def get_or_create_component(api_component):
+    def get_or_create_component(api_component, i18n_api_component=None):
         # Look for component with same name and type
-        component = AddressComponent.objects.annotate(count=Count('types')).filter(long_name=api_component['long_name'],
-                                                                                   short_name=api_component[
-                                                                                       'short_name'])
+        component = AddressComponent.objects.annotate(count=Count('types')) \
+            .filter(long_name=api_component['long_name'], short_name=api_component['short_name'])
+
+        default_language = helpers.get_settings().get("API_LANGUAGE", "en")
+
         for component_type in api_component['types']:
             component = component.filter(types__name=component_type)
         component = component.filter(count=len(api_component['types']))
@@ -34,6 +60,17 @@ class AddressComponent(models.Model):
             # Component not found, creating
             component = AddressComponent(long_name=api_component['long_name'], short_name=api_component['short_name'])
             component.save()
+            # save localization of component
+            if i18n_api_component:
+                i18n_component_data = {
+                    'long_name_' + default_language: api_component['long_name'],
+                    'short_name_' + default_language: api_component['short_name']
+                }
+                for lang, i18n_data in i18n_api_component.items():
+                    i18n_component_data['long_name_' + lang] = i18n_data['long_name']
+                    i18n_component_data['short_name_' + lang] = i18n_data['short_name']
+                i18n_component = AddressComponentLocalized(component=component, **i18n_component_data)
+                i18n_component.save()
         else:
             # We clear and recreate types because
             # sometimes google changes types for a given component
@@ -54,23 +91,21 @@ class AddressComponent(models.Model):
 
 
 class AddressSets(models.QuerySet):
+    pass
+
+
+class AddressManager(models.Manager):
     """ If you save city name from input to raw ->
         you can use `unique_cities` queryset in model.Manager
         like `Address.objects.unique_cities()`
     """
-    def validated(self):
-        return self.filter(validated=True)
 
-    def unique_cities(self):
-        return self.distinct('city_state').values('city_state', 'id')
-
-
-class AddressManager(models.Manager):
     def get_queryset(self):
         return AddressSets(self.model, using=self._db)
 
-    def unique_cities(self):
-        return self.get_queryset().unique_cities().order_by('city_state')
+    @staticmethod
+    def unique_cities(locale=None):
+        return AddressComponent.objects.cities(locale)
 
 
 class Address(models.Model):
@@ -183,3 +218,12 @@ class Address(models.Model):
         if self.address_line:
             return self.address_line
         return ""
+
+
+class AddressComponentLocalized(helpers.MultilingualModel):
+    component = models.OneToOneField(AddressComponent, primary_key=True,
+                                     on_delete=models.CASCADE, related_name='i18n')
+    short_name_ru = models.CharField(max_length=400, default='', blank=True)
+    short_name_uk = models.CharField(max_length=400, default='', blank=True)
+    long_name_ru = models.CharField(max_length=400, default='', blank=True)
+    long_name_uk = models.CharField(max_length=400, default='', blank=True)
