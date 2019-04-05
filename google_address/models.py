@@ -2,6 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Count
 from django.utils import translation
+from django.utils.translation import get_language
 
 from . import helpers
 
@@ -16,22 +17,16 @@ class AddressComponentType(models.Model):
 
 
 class AddressComponentSets(models.QuerySet):
-    def unique_cities(self, locale=None):
-        queryset = self.filter(types__name="locality")
-        if locale is not None:
-            return queryset.select_related('i18n')
-        else:
-            return queryset
+    def cities(self):
+        return self.filter(types__name="locality")
 
 
 class AddressComponentManager(models.Manager):
     def get_queryset(self):
         return AddressComponentSets(self.model, using=self._db)
 
-    def cities(self, locale=None):
-        if helpers.get_settings().get("I18N", None):
-            locale = translation.get_language()
-        return self.get_queryset().unique_cities(locale)
+    def cities(self):
+        return self.get_queryset().cities()
 
 
 class AddressComponent(models.Model):
@@ -104,8 +99,8 @@ class AddressManager(models.Manager):
         return AddressSets(self.model, using=self._db)
 
     @staticmethod
-    def unique_cities(locale=None):
-        return AddressComponent.objects.cities(locale)
+    def unique_cities():
+        return AddressComponent.objects.cities()
 
 
 class Address(models.Model):
@@ -137,7 +132,7 @@ class Address(models.Model):
     @property
     def city(self):
         city = self.address_components.filter(types__name='locality').first()
-        return str(city or '')
+        return str(city.i18n or '')
 
     @property
     def composite(self):
@@ -188,8 +183,8 @@ class Address(models.Model):
         for component in self.address_components.all():
             for component_type in component.types.all():
                 if component_type.name in address:
-                    address[component_type.name] = {'short_name': component.short_name,
-                                                    'long_name': component.long_name}
+                    localized_component = component.i18n.select_language(get_language())
+                    address[component_type.name] = {'long_name': localized_component.long_name}
 
         # Build address to dict or json
         composed = {'street': '', 'building_number': '', 'city_name': '', 'region_name': '', 'district_name': ''}
