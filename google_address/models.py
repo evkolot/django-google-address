@@ -132,7 +132,9 @@ class Address(models.Model):
     @property
     def city(self):
         city = self.address_components.filter(types__name='locality').first()
-        return str(city.i18n or '')
+        if city:
+            return str(city.i18n if hasattr(city, 'i18n') else '')
+        return ''
 
     @property
     def composite(self):
