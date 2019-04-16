@@ -11,7 +11,7 @@ reqs = [str(ir.req) for ir in install_reqs]
 
 setup(
     name='django-google-address',
-    version='1.2.2',
+    version='1.2.3',
     author=u'Leonardo Arroyo',
     author_email='contato@leonardoarroyo.com',
     packages=find_packages(),

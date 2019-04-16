@@ -133,7 +133,7 @@ class Address(models.Model):
     def city(self):
         city = self.address_components.filter(types__name='locality').first()
         if city:
-            return str(city.i18n if hasattr(city, 'i18n') else '')
+            return str(city.i18n.long_name if hasattr(city, 'i18n') else city.long_name)
         return ''
 
     @property
