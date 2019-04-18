@@ -32,7 +32,7 @@ def update_address(instance):
             location = dict(lat=result["geometry"]["location"]["lat"],
                             lng=result["geometry"]["location"]["lng"])
             Address.objects.filter(pk=instance.pk).update(**location)
-            geolocation_update.send(sender=None, **location)
+            geolocation_update.send(sender=None, instance=instance, **location)
     except:  # pragma: no cover
         pass
 

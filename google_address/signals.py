@@ -19,4 +19,4 @@ def address_post_save(sender, instance, **kwargs):
         return update_address(instance)
 
 
-geolocation_update = Signal(providing_args=["lat", "lng"])
+geolocation_update = Signal(providing_args=["instance", "lat", "lng"])
