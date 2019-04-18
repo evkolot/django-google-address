@@ -3,6 +3,7 @@ import threading
 from google_address.api import GoogleAddressApi
 from google_address.models import Address, AddressComponent
 from .helpers import get_settings
+from .signals import geolocation_update
 
 
 def update_address(instance):
@@ -28,8 +29,10 @@ def update_address(instance):
 
     try:
         if result["geometry"]:
-            Address.objects.filter(pk=instance.pk).update(lat=result["geometry"]["location"]["lat"],
-                                                          lng=result["geometry"]["location"]["lng"])
+            location = dict(lat=result["geometry"]["location"]["lat"],
+                            lng=result["geometry"]["location"]["lng"])
+            Address.objects.filter(pk=instance.pk).update(**location)
+            geolocation_update.send(sender=None, **location)
     except:  # pragma: no cover
         pass
 
