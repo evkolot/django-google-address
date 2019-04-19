@@ -1,5 +1,5 @@
 from django.db.models.signals import post_save
-from django.dispatch import receiver, Signal
+from django.dispatch import receiver
 
 from google_address import helpers
 from google_address.models import Address
@@ -17,6 +17,3 @@ def address_post_save(sender, instance, **kwargs):
         return thread
     else:
         return update_address(instance)
-
-
-geolocation_update = Signal(providing_args=["instance", "lat", "lng"])

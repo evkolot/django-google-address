@@ -1,9 +1,12 @@
 import threading
+from django.dispatch import Signal
 
 from google_address.api import GoogleAddressApi
 from google_address.models import Address, AddressComponent
 from .helpers import get_settings
-from .signals import geolocation_update
+
+
+geolocation_update = Signal(providing_args=["instance", "lat", "lng"])
 
 
 def update_address(instance):
