@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import Count
 from django.utils import translation
 from django.utils.translation import get_language
+from django.db.utils import IntegrityError
 
 from . import helpers
 
@@ -80,7 +81,10 @@ class AddressComponent(models.Model):
             except ObjectDoesNotExist:
                 component_type = AddressComponentType(name=api_component_type)
                 component_type.save()
-            component.types.add(component_type)
+            try:
+                component.types.add(component_type)
+            except IntegrityError:
+                pass
 
         return component
 
