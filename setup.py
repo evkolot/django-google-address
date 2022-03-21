@@ -7,7 +7,7 @@ except ImportError:  # for pip <= 9.0.3
     from pip.req import parse_requirements
 
 install_reqs = parse_requirements('requirements.txt', session=False)
-requirements = list(requirements) 
+requirements = list(install_reqs) 
 try:
     requirements = [str(ir.req) for ir in install_reqs]
 except:
