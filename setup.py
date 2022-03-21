@@ -7,7 +7,11 @@ except ImportError:  # for pip <= 9.0.3
     from pip.req import parse_requirements
 
 install_reqs = parse_requirements('requirements.txt', session=False)
-reqs = [str(ir.req) for ir in install_reqs]
+requirements = list(requirements) 
+try:
+    requirements = [str(ir.req) for ir in install_reqs]
+except:
+    requirements = [str(ir.requirement) for ir in install_reqs]
 
 setup(
     name='django-google-address',
@@ -22,5 +26,5 @@ setup(
     description='Custom fork created on the way. co-author: Yevhenii Dehtiar @ hlv-ua.pro',
     long_description=open('README.rst', encoding='utf-8').read(),
     zip_safe=False,
-    install_requires=reqs
+    install_requires=requirements
 )
